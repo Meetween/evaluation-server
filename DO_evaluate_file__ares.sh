@@ -26,14 +26,14 @@ ARGS: [-h] [-v] [-d] task testset organization modelname modelsize modeldescript
       -h        	print help
       -v        	verbose
       -d        	debug
-      task      	ASR|MT|ST|LR
-      testset   	MUSTC|FLORES|LRS3|... (depends on task)
+      task      	ASR|MT|ST|LIPREAD
+      testset   	MUSTC|FLORES|ACL6060|LRS3|... (depends on task)
       organization 	TLT|FBK|KIT|ITU|TAUS|ZOOM|PI|CYF
       modelname		a string without-spaces (e.g. Seamless-m4t-v2-large)
       modelsize 	a string without-spaces (e.g. 2.3B-parameters)
       modeldescription 	a quoted string (e.g. "foundational all-in-one Multilingual and Multimodal Machine Translation model by Meta AI, delivering translation for speech and text in nearly 100 languages")
       other+            depends on task:
-			   lang hypFile       (if task == ASR|LR)
+			   lang hypFile       (if task == ASR|LIPREAD)
 			   srcL tgtL hypFile  (if task == MT|ST)
 EOF
 }
@@ -42,7 +42,7 @@ EOF
 check_task() {
   task=$1
   case $task in
-    ASR|MT|ST|LR)
+    ASR|MT|ST|LIPREAD)
       ;;
     *)
       print_error unknown task $task
@@ -78,7 +78,7 @@ check_testset() {
       ;;
     ST)
       case $testset in
-        MUSTC)
+        MUSTC|ACL6060)
           ;;
         *)
           print_error unknown testset $testset for task $task
@@ -87,7 +87,7 @@ check_testset() {
         esac
 
       ;;
-    LR)
+    LIPREAD)
       case $testset in
         LRS3)
           ;;
