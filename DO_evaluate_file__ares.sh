@@ -58,7 +58,7 @@ check_testset() {
   case $task in
     ASR)
       case $testset in
-        MUSTC)
+        MUSTC|LRS3)
           ;;
         *)
           print_error unknown testset $testset for task $task 
@@ -174,16 +174,34 @@ outDir=${scriptDir}/sessions
 # jj is the script to join json files
 jj=${scriptDir}/../envs/etc/jj.py
 
+tmpPrefix=/tmp/Defa.$$
+
 # flags to perform sacrebleu scores
 doSB=1
 realignFlag='-n'
 case $task in 
-  ASR|LR)
+  ASR|LIPREAD)
     sl=$1
     hypFile=$2
     shift 2
     refDir=${scriptDir}/../tasks/${task}/${testset}/${sl}
-    refFile=${refDir}/*.${sl}
+    case $testset in
+      LRS3)
+        # special case of LRS3:
+	#   both hyp and ref are tsv files with lines with format
+	#   $videoid TAB $sentence
+	refFileTsv=${refDir}/*.${sl}.tsv.sorted
+	refFileTmp=${tmpPrefix}.sorted.ref
+	cut -f2 $refFileTsv > $refFileTmp
+	refFile=$refFileTmp
+	hypFileTmp=${tmpPrefix}.sorted.hyp
+	sort $hypFile | cut -f2 > $hypFileTmp
+	hypFile=$hypFileTmp
+      ;;
+      *)
+        refFile=${refDir}/*.${sl}
+      ;;
+    esac
     # do not performe sacrebleu (only WER)
     doSB=0
     tl=none
@@ -206,7 +224,6 @@ test -f "$hypFile" || { print_error cannot find hypFile $hypFile ; exit 1 ; }
 ## test -f "$refFile" || { print_error cannot find refFile $refFile ; exit 1 ; }
 
 
-tmpPrefix=/tmp/Defa.$$
 tmpSWER=${tmpPrefix}.scores.WER
 tmpSSB=${tmpPrefix}.scores.SB
 tmpSALL=${tmpPrefix}.scores.ALL
