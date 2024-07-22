@@ -58,7 +58,7 @@ check_testset() {
   case $task in
     ASR)
       case $testset in
-        MUSTC|LRS3)
+        MUSTC|LRS3|ACL6060)
           ;;
         *)
           print_error unknown testset $testset for task $task 
@@ -68,7 +68,7 @@ check_testset() {
       ;;
     MT)
       case $testset in
-        FLORES)
+        FLORES|ACL6060)
           ;;
         *)
           print_error unknown testset $testset for task $task
@@ -230,7 +230,7 @@ tmpSALL=${tmpPrefix}.scores.ALL
 tmpMeta=${tmpPrefix}.meta
 tmpFinal=${tmpPrefix}.final
 
-# run SACREBLEU if needed
+# run WER if needed
 bash ${scriptDir}/run-wer__ares.sh $sl $hypFile $refFile > ${tmpSWER}
 # manage failure
 test $? -eq 0 || echo '{"wer": "ERROR"}' > ${tmpSWER}
