@@ -27,7 +27,7 @@ ARGS: [-h] [-v] [-d] task testset organization modelname modelsize modeldescript
       -v        	verbose
       -d        	debug
       task      	ASR|MT|ST|LIPREAD
-      testset   	MUSTC|FLORES|ACL6060|LRS3|... (depends on task)
+      testset   	MUSTC|FLORES|ACL6060|LRS3|MTEDX|... (depends on task)
       organization 	TLT|FBK|KIT|ITU|TAUS|ZOOM|PI|CYF
       modelname		a string without-spaces (e.g. Seamless-m4t-v2-large)
       modelsize 	a string without-spaces (e.g. 2.3B-parameters)
@@ -58,7 +58,7 @@ check_testset() {
   case $task in
     ASR)
       case $testset in
-        MUSTC|LRS3|ACL6060)
+        MUSTC|LRS3|ACL6060|MTEDX)
           ;;
         *)
           print_error unknown testset $testset for task $task 
