@@ -78,7 +78,7 @@ check_testset() {
       ;;
     ST)
       case $testset in
-        MUSTC|ACL6060)
+        MUSTC|ACL6060|MTEDX)
           ;;
         *)
           print_error unknown testset $testset for task $task
