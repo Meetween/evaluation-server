@@ -35,6 +35,10 @@ ARGS: [-h] [-v] [-d] task testset organization modelname modelsize modeldescript
       other+            depends on task:
 			   lang hypFile       (if task == ASR|LIPREAD)
 			   srcL tgtL hypFile  (if task == MT|ST)
+  Please note that
+      1) for the DIPCO testset currently only the "close-talk" subset is supported
+         (the "far-field" is not supported). hypFile must be a a 3405 lines file
+         with transcriptions of the close-talk audios.
 EOF
 }
 
@@ -190,7 +194,7 @@ case $task in
         # special case of DIPCO:
 	#   currently only the "close-talk" subset is supported
 	#   (the "far-field" is not supported).
-	#   hyp must be a file with 3405 lines with transcriptions of
+	#   hyp must be a 3405 lines file with transcriptions of
 	#   the close-talk audios
 	#
         refFile=${refDir}/close-talk.${sl}
