@@ -35,8 +35,12 @@ ARGS: [-h] [-v] [-d] task testset organization modelname modelsize modeldescript
       other+            depends on task:
 			   lang hypFile       (if task == ASR|LIPREAD)
 			   srcL tgtL hypFile  (if task == MT|ST)
-  Please note that
-      1) for the DIPCO testset currently only the "close-talk" subset is supported
+  Notes:
+      1) the format of hypFile is plain text where line content depends on the testset:
+      	   - videoId TAB sentence       if testset == LRS3
+	     (an example of videoId is the string  "test/0Fi83BHQsMA/00002")
+	   - sentence                   in all the other tasks
+      2) for the DIPCO testset currently only the "close-talk" subset is supported
          (the "far-field" is not supported). hypFile must be a a 3405 lines file
          with transcriptions of the close-talk audios.
 EOF
