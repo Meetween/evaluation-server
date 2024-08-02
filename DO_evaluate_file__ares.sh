@@ -27,7 +27,7 @@ ARGS: [-h] [-v] [-d] task testset organization modelname modelsize modeldescript
       -v        	verbose
       -d        	debug
       task      	ASR|MT|ST|LIPREAD
-      testset   	MUSTC|FLORES|ACL6060|LRS3|MTEDX|... (depends on task)
+      testset   	MUSTC|FLORES|ACL6060|LRS3|MTEDX|DIPCO|... (depends on task)
       organization 	TLT|FBK|KIT|ITU|TAUS|ZOOM|PI|CYF
       modelname		a string without-spaces (e.g. Seamless-m4t-v2-large)
       modelsize 	a string without-spaces (e.g. 2.3B-parameters)
@@ -58,7 +58,7 @@ check_testset() {
   case $task in
     ASR)
       case $testset in
-        MUSTC|LRS3|ACL6060|MTEDX)
+        MUSTC|LRS3|ACL6060|MTEDX|DIPCO)
           ;;
         *)
           print_error unknown testset $testset for task $task 
@@ -186,6 +186,15 @@ case $task in
     shift 2
     refDir=${scriptDir}/../tasks/${task}/${testset}/${sl}
     case $testset in
+      DIPCO)
+        # special case of DIPCO:
+	#   currently only the "close-talk" subset is supported
+	#   (the "far-field" is not supported).
+	#   hyp must be a file with 3405 lines with transcriptions of
+	#   the close-talk audios
+	#
+        refFile=${refDir}/close-talk.${sl}
+      ;;
       LRS3)
         # special case of LRS3:
 	#   both hyp and ref are tsv files with lines with format
