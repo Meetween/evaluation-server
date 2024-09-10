@@ -26,20 +26,21 @@ ARGS: [-h] [-v] [-d] task testset organization modelname modelsize modeldescript
       -h        	print help
       -v        	verbose
       -d        	debug
-      task      	ASR|MT|ST|LIPREAD
-      testset   	MUSTC|FLORES|ACL6060|LRS3|MTEDX|DIPCO|... (depends on task)
+      task      	ASR|MT|ST|LIPREAD|SQA
+      testset   	MUSTC|FLORES|ACL6060|LRS3|MTEDX|DIPCO|SPOKENSQUAD... (depends on task)
       organization 	TLT|FBK|KIT|ITU|TAUS|ZOOM|PI|CYF
       modelname		a string without-spaces (e.g. Seamless-m4t-v2-large)
       modelsize 	a string without-spaces (e.g. 2.3B-parameters)
       modeldescription 	a quoted string (e.g. "foundational all-in-one Multilingual and Multimodal Machine Translation model by Meta AI, delivering translation for speech and text in nearly 100 languages")
       other+            depends on task:
-			   lang hypFile       (if task == ASR|LIPREAD)
+			   lang hypFile       (if task == ASR|LIPREAD|SQA)
 			   srcL tgtL hypFile  (if task == MT|ST)
   Notes:
-      1) the format of hypFile is plain text where line content depends on the testset:
-      	   - videoId TAB sentence       if testset == LRS3
+      1) the format of hypFile depends on the task/testset:
+           - json with predictions                 if testset is SQA/SPOKENSQUAD
+      	   - videoId TAB sentence (one for line)   if testset == LRS3
 	     (an example of videoId is the string  "test/0Fi83BHQsMA/00002")
-	   - sentence                   in all the other tasks
+	   - sentence (one for line)               in all the other tasks
       2) for the DIPCO testset currently only the "close-talk" subset is supported
          (the "far-field" is not supported). hypFile must be a a 3405 lines file
          with transcriptions of the close-talk audios.
@@ -50,7 +51,7 @@ EOF
 check_task() {
   task=$1
   case $task in
-    ASR|MT|ST|LIPREAD)
+    ASR|MT|ST|LIPREAD|SQA)
       ;;
     *)
       print_error unknown task $task
@@ -98,6 +99,16 @@ check_testset() {
     LIPREAD)
       case $testset in
         LRS3)
+          ;;
+        *)
+          print_error unknown testset $testset for task $task
+          show_help ; exit 1
+          ;;
+        esac
+      ;;
+    SQA)
+      case $testset in
+        SPOKENSQUAD)
           ;;
         *)
           print_error unknown testset $testset for task $task
@@ -179,14 +190,17 @@ scriptDir=${PLG_GROUPS_STORAGE}/plggmeetween/evaluation
 # the dir to write the output json string
 outDir=${scriptDir}/sessions
 
-# jj is the script to join json files
-jj=${scriptDir}/../envs/etc/jj.py
+# the script to join json files
+joinJson=${scriptDir}/../envs/etc/jj.py
 
 tmpPrefix=/tmp/Defa.$$
 
-# flags to perform sacrebleu scores
+# flags to perform WER, SA(sacrebleu), SQA(SQA Accuracy) scores
+doWER=1
 doSB=1
+doSQA=0
 realignFlag='-n'
+globalFlag='-g'
 case $task in 
   ASR|LIPREAD)
     sl=$1
@@ -234,6 +248,16 @@ case $task in
     refFile=${refDir}/*.${langPair}.${tl}
     subtask=$langPair
     ;;
+  SQA)
+    sl=$1
+    hypFile=$2
+    shift 2
+    refDir=${scriptDir}/../tasks/${task}/${testset}/${sl}
+    refFile=${refDir}/*.${sl}.json
+    doWER=0
+    doSB=0
+    doSQA=1
+    ;;
 esac
 
 
@@ -241,17 +265,27 @@ test -f "$hypFile" || { print_error cannot find hypFile $hypFile ; exit 1 ; }
 ## test -f "$refFile" || { print_error cannot find refFile $refFile ; exit 1 ; }
 
 
+# the json with a single score only
 tmpSWER=${tmpPrefix}.scores.WER
 tmpSSB=${tmpPrefix}.scores.SB
+tmpSSQA=${tmpPrefix}.scores.SQA
+#
+# the json with all the scores joned (if needed)
 tmpSALL=${tmpPrefix}.scores.ALL
+#
+# the json with the meta data only
 tmpMeta=${tmpPrefix}.meta
+#
+# the final json with all the info (meta + all scores)
 tmpFinal=${tmpPrefix}.final
 
 # run WER if needed
-bash ${scriptDir}/run-wer__ares.sh $sl $hypFile $refFile > ${tmpSWER}
-# manage failure
-test $? -eq 0 || echo '{"wer": "ERROR"}' > ${tmpSWER}
-
+if test $doWER -eq 1
+then
+  bash ${scriptDir}/run-wer__ares.sh $globalFlag $sl $hypFile $refFile > ${tmpSWER}
+  # manage failure
+  test $? -eq 0 || echo '{"wer": "ERROR"}' > ${tmpSWER}
+fi
 
 # run SACREBLEU if needed
 if test $doSB -eq 1
@@ -259,11 +293,26 @@ then
   bash ${scriptDir}/run-sacrebleu__ares.sh $realignFlag $sl $tl $hypFile $refFile > ${tmpSSB}
   # manage failure
   test $? -eq 0 || echo '{"bleu": "ERROR", "chrf": "ERROR", "ter": "ERROR"}' > ${tmpSSB}
-  #
-  echo '{"scores": '$($jj ${tmpSWER} ${tmpSSB})'}' > ${tmpSALL}
-else
-  echo '{"scores": '$(cat ${tmpSWER})'}' > ${tmpSALL}
 fi
+
+# run SQA if needed
+if test $doSQA -eq 1
+then
+  bash ${scriptDir}/run-SQA-accuracy__ares.sh $sl $hypFile $refFile > ${tmpSSQA}
+  # manage failure
+  test $? -eq 0 || echo '{"accuracy": "ERROR"}' > ${tmpSSQA}
+fi
+
+
+# join all the single json score files
+jFList=""
+for f in ${tmpSWER} ${tmpSSB} ${tmpSSQA}
+do
+  if test -f $f ; then jFList="$jFList $f" ; fi
+done
+echo '{"scores": '$($joinJson ${jFList})'}' > ${tmpSALL}
+
+
 
 date=$(date +'%Y%m%dT%H%M%S')
 cat << EOF > $tmpMeta
@@ -282,8 +331,7 @@ cat << EOF > $tmpMeta
 }
 EOF
 
-## jq -s 'add' $tmpMeta $tmpSALL > $tmpFinal
-$jj $tmpMeta $tmpSALL > $tmpFinal
+$joinJson $tmpMeta $tmpSALL > $tmpFinal
 
 echo evaluation results:
 cat $tmpFinal

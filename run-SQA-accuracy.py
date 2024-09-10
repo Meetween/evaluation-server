@@ -163,8 +163,9 @@ def main():
     res = {"accuracy":  accStr, 
            "input_questions": inQStr,
            "evaluated_questions": evQStr}
-    print(res)
+    print(json.dumps(res))
     
 
 if __name__ == "__main__":
     main()
+
