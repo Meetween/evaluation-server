@@ -26,17 +26,18 @@ ARGS: [-h] [-v] [-d] task testset organization modelname modelsize modeldescript
       -h        	print help
       -v        	verbose
       -d        	debug
-      task      	ASR|MT|ST|LIPREAD|SQA
-      testset   	MUSTC|FLORES|ACL6060|LRS3|MTEDX|DIPCO|SPOKENSQUAD... (depends on task)
+      task      	ASR|MT|ST|LIPREAD|SQA|SUM|SSUM
+      testset   	MUSTC|FLORES|ACL6060|LRS3|MTEDX|DIPCO|SPOKENSQUAD|ICSI|AUTOMIN... (depends on task)
       organization 	TLT|FBK|KIT|ITU|TAUS|ZOOM|PI|CYF
       modelname		a string without-spaces (e.g. Seamless-m4t-v2-large)
       modelsize 	a string without-spaces (e.g. 2.3B-parameters)
       modeldescription 	a quoted string (e.g. "foundational all-in-one Multilingual and Multimodal Machine Translation model by Meta AI, delivering translation for speech and text in nearly 100 languages")
       other+            depends on task:
-			   lang hypFile       (if task == ASR|LIPREAD|SQA)
+			   lang hypFile       (if task == ASR|LIPREAD|SQA|SUM|SSUM)
 			   srcL tgtL hypFile  (if task == MT|ST)
   Notes:
       1) the format of hypFile depends on the task/testset:
+           - jsonl with summarization hypotheses   if task is SUM or SSUM
            - json with predictions                 if testset is SQA/SPOKENSQUAD
       	   - videoId TAB sentence (one for line)   if testset == LRS3
 	     (an example of videoId is the string  "test/0Fi83BHQsMA/00002")
@@ -51,7 +52,7 @@ EOF
 check_task() {
   task=$1
   case $task in
-    ASR|MT|ST|LIPREAD|SQA)
+    ASR|MT|ST|LIPREAD|SQA|SUM|SSUM)
       ;;
     *)
       print_error unknown task $task
@@ -73,7 +74,7 @@ check_testset() {
           print_error unknown testset $testset for task $task 
           show_help ; exit 1
           ;;
-        esac
+      esac
       ;;
     MT)
       case $testset in
@@ -83,7 +84,7 @@ check_testset() {
           print_error unknown testset $testset for task $task
           show_help ; exit 1
           ;;
-        esac
+      esac
       ;;
     ST)
       case $testset in
@@ -93,8 +94,7 @@ check_testset() {
           print_error unknown testset $testset for task $task
           show_help ; exit 1
           ;;
-        esac
-
+      esac
       ;;
     LIPREAD)
       case $testset in
@@ -104,7 +104,7 @@ check_testset() {
           print_error unknown testset $testset for task $task
           show_help ; exit 1
           ;;
-        esac
+      esac
       ;;
     SQA)
       case $testset in
@@ -114,7 +114,27 @@ check_testset() {
           print_error unknown testset $testset for task $task
           show_help ; exit 1
           ;;
-        esac
+      esac
+      ;;
+    SUM)
+      case $testset in
+        ICSI|AUTOMIN)
+          ;;
+        *)
+          print_error unknown testset $testset for task $task
+          show_help ; exit 1
+          ;;
+      esac
+      ;;
+    SSUM)
+      case $testset in
+        ICSI)
+          ;;
+        *)
+          print_error unknown testset $testset for task $task
+          show_help ; exit 1
+          ;;
+      esac
       ;;
   esac
 }
@@ -195,10 +215,11 @@ joinJson=${scriptDir}/../envs/etc/jj.py
 
 tmpPrefix=/tmp/Defa.$$
 
-# flags to perform WER, SA(sacrebleu), SQA(SQA Accuracy) scores
+# flags to perform WER, SA(sacrebleu), SQA(SQA Accuracy), ROU(SUM-rouge) scores
 doWER=1
 doSB=1
 doSQA=0
+doROU=0
 realignFlag='-n'
 globalFlag='-g'
 case $task in 
@@ -258,6 +279,16 @@ case $task in
     doSB=0
     doSQA=1
     ;;
+  SUM|SSUM)
+    sl=$1
+    hypFile=$2
+    shift 2
+    refDir=${scriptDir}/../tasks/${task}/${testset}/${sl}
+    refFile=${refDir}/*.${sl}.ref.jsonl
+    doWER=0
+    doSB=0
+    doROU=1
+    ;;
 esac
 
 
@@ -269,6 +300,7 @@ test -f "$hypFile" || { print_error cannot find hypFile $hypFile ; exit 1 ; }
 tmpSWER=${tmpPrefix}.scores.WER
 tmpSSB=${tmpPrefix}.scores.SB
 tmpSSQA=${tmpPrefix}.scores.SQA
+tmpSROU=${tmpPrefix}.scores.ROU
 #
 # the json with all the scores joned (if needed)
 tmpSALL=${tmpPrefix}.scores.ALL
@@ -303,10 +335,18 @@ then
   test $? -eq 0 || echo '{"accuracy": "ERROR"}' > ${tmpSSQA}
 fi
 
+# run ROU if needed
+if test $doROU -eq 1
+then
+  bash ${scriptDir}/run-SUM-rouge__ares.sh $sl $hypFile $refFile > ${tmpSROU}
+  # manage failure
+  test $? -eq 0 || echo '{"R-1": "ERROR", "R-2": "ERROR", "R-L": "ERROR"}' > ${tmpSROU}
+fi
+
 
 # join all the single json score files
 jFList=""
-for f in ${tmpSWER} ${tmpSSB} ${tmpSSQA}
+for f in ${tmpSWER} ${tmpSSB} ${tmpSSQA} ${tmpSROU}
 do
   if test -f $f ; then jFList="$jFList $f" ; fi
 done
