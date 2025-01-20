@@ -26,8 +26,8 @@ ARGS: [-h] [-v] [-d] task testset organization modelname modelsize modeldescript
       -h        	print help
       -v        	verbose
       -d        	debug
-      task      	ASR|MT|ST|LIPREAD|SQA|SUM|SSUM
-      testset   	MUSTC|FLORES|ACL6060|LRS3|MTEDX|DIPCO|SPOKENSQUAD|ICSI|AUTOMIN... (depends on task)
+      task      	ASR|MT|ST|LIPREAD|SQA|SUM|SSUM|TTS|SLU
+      testset   	MUSTC|FLORES|ACL6060|LRS3|MTEDX|DIPCO|SPOKENSQUAD|ICSI|AUTOMIN|SPEECHMASSIVE... (depends on task)
       organization 	TLT|FBK|KIT|ITU|TAUS|ZOOM|PI|CYF
       modelname		a string without-spaces (e.g. Seamless-m4t-v2-large)
       modelsize 	a string without-spaces (e.g. 2.3B-parameters)
@@ -39,8 +39,11 @@ ARGS: [-h] [-v] [-d] task testset organization modelname modelsize modeldescript
       1) the format of hypFile depends on the task/testset:
            - jsonl with summarization hypotheses   if task is SUM or SSUM
            - json with predictions                 if testset is SQA/SPOKENSQUAD
-      	   - videoId TAB sentence (one for line)   if testset == LRS3
+      	   - videoId TAB sentence (one for line)   if testset is LRS3
 	     (an example of videoId is the string  "test/0Fi83BHQsMA/00002")
+           - pipe '|' sep hypotheses(one for line) if task is SLU
+             i.e. SENTENCE_WORDS | SLOT_VALUES | INTENT_VALUE
+             e.g. qué tiempo hace esta semana | Other Other Other date date | weather_query
 	   - sentence (one for line)               in all the other tasks
       2) for the DIPCO testset currently only the "close-talk" subset is supported
          (the "far-field" is not supported). hypFile must be a a 3405 lines file
@@ -52,7 +55,11 @@ EOF
 check_task() {
   task=$1
   case $task in
-    ASR|MT|ST|LIPREAD|SQA|SUM|SSUM)
+    ASR|MT|ST|LIPREAD|SQA|SUM|SSUM|SLU)
+      ;;
+    TTS)
+      print_error task $task is not supported in the ares cluster
+      exit 1
       ;;
     *)
       print_error unknown task $task
@@ -129,6 +136,16 @@ check_testset() {
     SSUM)
       case $testset in
         ICSI)
+          ;;
+        *)
+          print_error unknown testset $testset for task $task
+          show_help ; exit 1
+          ;;
+      esac
+      ;;
+    SLU)
+      case $testset in
+        SPEECHMASSIVE)
           ;;
         *)
           print_error unknown testset $testset for task $task
@@ -215,11 +232,14 @@ joinJson=${scriptDir}/../envs/etc/jj.py
 
 tmpPrefix=/tmp/Defa.$$
 
-# flags to perform WER, SA(sacrebleu), SQA(SQA Accuracy), ROU(SUM-rouge) scores
+# flags to perform
+#    WER, SA(sacrebleu), SQA(SQA Accuracy), ROU(SUM-rouge), SLU
+#    scores
 doWER=1
 doSB=1
 doSQA=0
 doROU=0
+doSLU=0
 realignFlag='-n'
 globalFlag='-g'
 case $task in 
@@ -289,6 +309,17 @@ case $task in
     doSB=0
     doROU=1
     ;;
+  SLU)
+    sl=$1
+    hypFile=$2
+    shift 2
+    refDir=${scriptDir}/../tasks/${task}/${testset}/${sl}
+    refFile=${refDir}/*.${sl}
+    doWER=0
+    doSB=0
+    doROU=0
+    doSLU=1
+    ;;
 esac
 
 
@@ -301,6 +332,7 @@ tmpSWER=${tmpPrefix}.scores.WER
 tmpSSB=${tmpPrefix}.scores.SB
 tmpSSQA=${tmpPrefix}.scores.SQA
 tmpSROU=${tmpPrefix}.scores.ROU
+tmpSSLU=${tmpPrefix}.scores.SLU
 #
 # the json with all the scores joned (if needed)
 tmpSALL=${tmpPrefix}.scores.ALL
@@ -343,10 +375,18 @@ then
   test $? -eq 0 || echo '{"R-1": "ERROR", "R-2": "ERROR", "R-L": "ERROR"}' > ${tmpSROU}
 fi
 
+# run SLU if needed
+if test $doSLU -eq 1
+then
+  bash ${scriptDir}/run-SLU-metrics__ares.sh $sl $hypFile $refFile > ${tmpSROU}
+  # manage failure
+  test $? -eq 0 || echo '{"slot_type_f1": "ERROR", "slot_value_cer": "ERROR", "intent_accuracy": "ERROR"}' > ${tmpSROU}
+fi
+
 
 # join all the single json score files
 jFList=""
-for f in ${tmpSWER} ${tmpSSB} ${tmpSSQA} ${tmpSROU}
+for f in ${tmpSWER} ${tmpSSB} ${tmpSSQA} ${tmpSROU} ${tmpSSLU}
 do
   if test -f $f ; then jFList="$jFList $f" ; fi
 done
