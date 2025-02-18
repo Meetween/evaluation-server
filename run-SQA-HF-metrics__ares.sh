@@ -1,6 +1,6 @@
 #! /bin/bash
 
-#SBATCH -A plgmeetween2004-cpu
+#SBATCH -A plgmeetween2025-cpu
 #SBATCH -p plgrid
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
@@ -63,6 +63,29 @@ test -f "$ref" || { echo cannot find ref $ref ; exit 1 ; }
 
 exe=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/HF/compute_score.py
 
-python3 $exe $debugInfo $ref $hyp 2> /dev/null
+tmpPrefix=/tmp/rSr.$$
+tmpScores=${tmpPrefix}.scores
+tmpFinal=${tmpPrefix}.final
+
+python3 $exe $debugInfo $ref $hyp 2> /dev/null 1> $tmpScores
+
+if test $? != 0
+then
+  exitFlag=1
+  state=ERROR
+  reason=UNKNOWN
+  score=UNKNOWN
+  printf '{"state": "%s", "reason": "%s", "scores": {"exact_match": "%s", "f1": "%s"}}\n' $state $reason $score $score > $tmpFinal
+else
+  exitFlag=0
+  state=OK
+  printf '{"state": "%s", "scores": ' $state > $tmpFinal
+  printf '%s' "$(<$tmpScores)" >> $tmpFinal
+  echo '}' >> $tmpFinal
+fi
+
+cat $tmpFinal
+
+rm -f ${tmpPrefix}.*
 
 

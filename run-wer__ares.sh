@@ -1,6 +1,6 @@
 #! /bin/bash
 
-#SBATCH -A plgmeetween2004-cpu
+#SBATCH -A plgmeetween2025-cpu
 #SBATCH -p plgrid
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
@@ -67,6 +67,7 @@ test -f "$ref" || { echo cannot find ref $ref ; exit 1 ; }
 tmpPrefix=/tmp/rjiw.$$
 hypTmp=${tmpPrefix}.hyp
 refTmp=${tmpPrefix}.ref
+errTmp=${tmpPrefix}.ERR
 
 preprocessFile < $hyp > $hypTmp
 preprocessFile < $ref > $refTmp
@@ -75,16 +76,20 @@ source ${PLG_GROUPS_STORAGE}/plggmeetween/envs/setup/jiwer.USE
 
 exe=jiwer
 
-info=$($exe $globalFlag -r $refTmp -h $hypTmp | awk '{printf "%.2f\n", $1*100}')
+info=$($exe $globalFlag -r $refTmp -h $hypTmp 2>$errTmp | awk '{printf "%.2f\n", $1*100}')
 # manage errors
 exitFlag=0
 if test -z "$info"
 then
   exitFlag=1
-  echo '{"wer": "ERROR"}'
+  reason=$(grep 'do not match' $errTmp | perl -pe 's/ in [^\)]+//g ; s/ValueError: //; s/ Use the.*$//')
+  state="ERROR"
+  score="UNKNOWN"
+  printf '{"state": "%s", "reason": "%s", "scores": {"wer": "%s"}}\n' $state "$reason" $score
 else
   exitFlag=0
-  printf '{"wer": %s}\n' $info
+  state="OK"
+  printf '{"state": "%s", "scores": {"wer": "%s"}}\n' $state $info
 fi
 
 \rm -f ${tmpPrefix}.*

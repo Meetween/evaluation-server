@@ -1,6 +1,6 @@
 #! /bin/bash
 
-#SBATCH -A plgmeetween2004-cpu
+#SBATCH -A plgmeetween2025-cpu
 #SBATCH -p plgrid
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
@@ -79,16 +79,22 @@ exitFlag=0
 if test -z "$info"
 then
   exitFlag=1
-  echo '{"bleu": "ERROR", "chrf": "ERROR", "ter": "ERROR"}'
+  state=ERROR
+  reason=UNKNOWN
+  bleu=UNKNOWN
+  chrf=UNKNOWN
+  ter=UNKNOWN
+  printf '{"state": "%s", "reason": "%s", "scores": {"bleu": "%s", "chrf": "%s", "ter": "%s"}}\n' $state $reason $bleu $chrf $ter
 else
   exitFlag=0
+  state=OK
   bleu=$(echo $info | awk '{print $1}')
   chrf=$(echo $info | awk '{print $2}')
   ter=$(echo $info | awk '{print $3}')
-  printf '{"bleu": %s, "chrf": %s, "ter": %s}\n' $bleu $chrf $ter
+  printf '{"state": "%s", "scores": {"bleu": %s, "chrf": %s, "ter": %s}}\n' $state $bleu $chrf $ter
 fi
 
-rm -f $tmpHyp
+rm -f ${tmpPrefix}.*
 
 exit $exitFlag
 

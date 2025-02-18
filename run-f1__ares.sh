@@ -1,6 +1,6 @@
 #! /bin/bash
 
-#SBATCH -A plgmeetween2004-cpu
+#SBATCH -A plgmeetween2025-cpu
 #SBATCH -p plgrid
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
@@ -63,6 +63,25 @@ source ${PLG_GROUPS_STORAGE}/plggmeetween/envs/setup/evaluate.USE
 
 exe=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/HF/f1.py
 
-python $exe $debugInfo $hyp $ref
+tmpPrefix=/tmp/rf1.$$
+tmpScore=${tmpPrefix}.score
 
+python $exe $debugInfo $hyp $ref 2>/dev/null 1>$tmpScore
+
+if test $? != 0
+then
+  exitFlag=1
+  state=ERROR
+  reason=UNKNOWN
+  score=UNKNOWN
+  printf '{"state": "%s", "reason": "%s", "scores": {"f1": "%s"}}\n' $state $reason $score
+else
+  exitFlag=0
+  state=OK
+  score=$(cat $tmpScore | awk '{print $2}' | tr -d '}')
+  printf '{"state": "%s", "scores": {"f1": %s}}\n' $state $score
+fi
+
+
+\rm -f $tmpScore
 

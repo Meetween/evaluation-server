@@ -1,6 +1,6 @@
 #! /bin/bash
 
-#SBATCH -A plgmeetween2004-cpu
+#SBATCH -A plgmeetween2025-cpu
 #SBATCH -p plgrid
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
@@ -65,6 +65,29 @@ source ${PLG_GROUPS_STORAGE}/plggmeetween/envs/setup/rouge.USE
 
 exe=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/SUM-rouge/eval.py
 
-python $exe $debugInfo $hyp $ref
+tmpPrefix=/tmp/rSr.$$
+tmpScores=${tmpPrefix}.scores
+tmpFinal=${tmpPrefix}.final
+
+python $exe $debugInfo $hyp $ref 2>/dev/null 1> $tmpScores
+
+if test $? != 0
+then
+  exitFlag=1
+  state=ERROR
+  reason=UNKNOWN
+  score=UNKNOWN
+  printf '{"state": "%s", "reason": "%s", "scores": {"R-1"": "%s", "R-2": "%s", "R-L": "%s"}}\n' $state $reason $score $score $score > $tmpFinal
+else
+  exitFlag=0
+  state=OK
+  printf '{"state": "%s", "scores": ' $state > $tmpFinal
+  printf '%s' "$(<$tmpScores)" >> $tmpFinal
+  echo '}' >> $tmpFinal
+fi
+
+cat $tmpFinal
+
+\rm -f $tmpScore $tmpFinal
 
 

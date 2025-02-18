@@ -1,6 +1,6 @@
 #! /bin/bash
 
-#SBATCH -A plgmeetween2004-gpu-a100
+#SBATCH -A plgmeetween2025-gpu-a100
 #SBATCH -p plgrid-gpu-a100
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
@@ -78,9 +78,20 @@ fi
 
 python -m bleurt.score_files -candidate_file=$tmpHyp -reference_file=$ref  -bleurt_batch_size=100 -batch_same_length=True -bleurt_checkpoint=$ckpDir -scores_file=$tmpScores &> /dev/null
 
-## echo tmpScores $(wc -l < $tmpScores)
-cat $tmpScores | awk '{t+=$1; n++}END{printf "{\"bleurt\": %s}\n", t/n}'
+if test $? != 0
+then
+  exitFlag=1
+  state=ERROR
+  reason=UNKNOWN
+  score=UNKNOWN
+  printf '{"state": "%s", "reason": "%s", "scores": {"bleurt": "%s"}}\n' $state $reason $score
+else
+  exitFlag=0
+  state=OK
+  score=$(cat $tmpScores | awk '{t+=$1; n++}END{printf "%s", t/n}')
+  printf '{"state": "%s", "scores": {"bleurt": %s}}\n' $state $score
+fi
 
-rm -f $tmpHyp $tmpScores
+rm -f ${tmpPrefix}.*
 
 

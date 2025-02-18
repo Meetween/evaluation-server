@@ -1,6 +1,6 @@
 #! /bin/bash
 
-#SBATCH -A plgmeetween2004-cpu
+#SBATCH -A plgmeetween2025-cpu
 #SBATCH -p plgrid
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
@@ -22,6 +22,7 @@ ARGS: [-h] [-v] lang hypFile refFile
   where
       -h        print help
       -v        verbose
+      lang      two-digit language code
       hypFile   json file with answer predictions
       refFile   json file with questtion-answer references
 EOF
@@ -52,7 +53,7 @@ shift $((OPTIND-1))
 
 [ "${1:-}" = "--" ] && shift
 
-sl=$1
+lang=$1
 hyp=$2
 ref=$3
 shift 3
@@ -62,13 +63,32 @@ test -f "$ref" || { echo cannot find ref $ref ; exit 1 ; }
 
 tmpPrefix=/tmp/rSa.$$
 outTmp=${tmpPrefix}.out
+tmpScores=${tmpPrefix}.scores
+tmpFinal=${tmpPrefix}.final
 
 source ${PLG_GROUPS_STORAGE}/plggmeetween/envs/setup/groq.USE
 
 ## exe=/net/people/plgrid/plgcattoni/eval/SQA/run-SQA-accuracy.py
 exe=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/SQA-accuracy/run-SQA-accuracy.py
 
-python $exe $debugInfo -p $hyp -r $ref -o $outTmp
+python $exe $debugInfo -p $hyp -r $ref -o $outTmp 2>/dev/null 1>$tmpScores
+
+if test $? != 0
+then
+  exitFlag=1
+  state=ERROR
+  reason=UNKNOWN
+  score=UNKNOWN
+  printf '{"state": "%s", "reason": "%s", "scores": {"accuracy"": "%s"}}\n' $state $reason $score 
+else
+  exitFlag=0
+  state=OK
+  printf '{"state": "%s", "scores": ' $state > $tmpFinal
+  printf '%s' "$(<$tmpScores)" >> $tmpFinal
+  echo '}' >> $tmpFinal
+fi
+
+cat $tmpFinal
 
 \rm -f ${tmpPrefix}.*
 

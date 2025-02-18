@@ -1,6 +1,6 @@
 #! /bin/bash
 
-#SBATCH -A plgmeetween2004-gpu-a100
+#SBATCH -A plgmeetween2025-gpu-a100
 #SBATCH -p plgrid-gpu-a100
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
@@ -76,9 +76,21 @@ fi
 
 comet-score --quiet --only_system -s $src -t $tmpHyp -r $ref 2>/dev/null > $tmpScores
 
-## echo tmpScores $(wc -l < $tmpScores)
-cat $tmpScores | awk '{printf "{\"comet\": %s}\n", $3}'
+if test $? != 0
+then
+  exitFlag=1
+  state=ERROR
+  reason=UNKNOWN
+  score=UNKNOWN
+  printf '{"state": "%s", "reason": "%s", "scores": {"comet": "%s"}}\n' $state $reason $score
+else
+  exitFlag=0
+  state=OK
+  score=$(cat $tmpScores | awk '{printf $3}')
+  printf '{"state": "%s", "scores": {"comet": %s}}\n' $state $score
+fi
 
-rm -f $tmpHyp $tmpScores
+
+rm -f ${tmpPrefix}.*
 
 

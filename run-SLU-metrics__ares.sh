@@ -1,6 +1,6 @@
 #! /bin/bash
 
-#SBATCH -A plgmeetween2004-cpu
+#SBATCH -A plgmeetween2025-cpu
 #SBATCH -p plgrid
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
@@ -64,6 +64,29 @@ test -f "$ref" || { echo cannot find ref $ref ; exit 1 ; }
 source ${PLG_GROUPS_STORAGE}/plggmeetween/envs/setup/slu.USE
 exe=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/SLU/slu_eval.py
 
-python3 $exe $debugInfo $hyp $ref
 
+tmpPrefix=/tmp/rSr.$$
+tmpScores=${tmpPrefix}.scores
+tmpFinal=${tmpPrefix}.final
+
+python3 $exe $debugInfo $hyp $ref 2> /dev/null 1> $tmpScores
+
+if test $? != 0
+then
+  exitFlag=1
+  state=ERROR
+  reason=UNKNOWN
+  score=UNKNOWN
+  printf '{"state": "%s", "reason": "%s", "scores": {"slot_type_f1": "%s", "slot_value_cer": "%s", "intent_accuracy": "%s"}}\n' $state $reason $score $score $score > $tmpFinal
+else
+  exitFlag=0
+  state=OK
+  printf '{"state": "%s", "scores": ' $state > $tmpFinal
+  printf '%s' "$(<$tmpScores)" >> $tmpFinal
+  echo '}' >> $tmpFinal
+fi
+
+cat $tmpFinal
+
+rm -f ${tmpPrefix}.*
 

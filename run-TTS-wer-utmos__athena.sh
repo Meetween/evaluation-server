@@ -1,12 +1,13 @@
 #! /bin/bash
 
-#SBATCH -A plgmeetween2004-gpu-a100
+#SBATCH -A plgmeetween2025-gpu-a100
 #SBATCH -p plgrid-gpu-a100
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
-#SBATCH --mem=50G
+#SBATCH --mem=10G
 #SBATCH --job-name=tts
+#SBATCH --time 24:00:00
 
 # script for the evaluation of TTS
 #  1) args: wav_dir ref_tsv
@@ -14,9 +15,9 @@
 #  3) compute UTMOS on each wav and get the average
 
 
-# get the wer score from a json string (e.g. '{"wer": 1.2345}')
+# get the wer score from a json string (e.g. '{"scores": {"wer": 1.2345}}')
 get_wer_score_from_json() {
-  python -c "import sys, json; obj=json.load(sys.stdin) ; print(obj['wer'])"
+  python -c "import sys, json; obj=json.load(sys.stdin) ; print(obj['scores']['wer'])"
 }
 
 # get mean and standard_deviation from a file with numbers
@@ -44,7 +45,7 @@ OPTIND=1         # Reset in case getopts has been used previously in the shell.
 # Initialize our own variables:
 verbose=0
 
-while getopts "hn" opt; do
+while getopts "hv" opt; do
   case "$opt" in
     h)
       show_help
@@ -105,7 +106,7 @@ do
   traF=${traDir}/${b}.txt
   # computing single WER
   grep "$b" $refF | cut -f2 > $singleRef
-  bash $exe2 $lang $traF $singleRef | get_wer_score_from_json >> $werListFile
+  bash $exe2 -g $lang $traF $singleRef | get_wer_score_from_json >> $werListFile
   if test $verbose -eq 1 ; then
     echo wer $(tail -1 $werListFile) 1>&2
   fi
@@ -129,8 +130,9 @@ uStdev=$(echo $utmosInfo | awk '{print $2}')
 # -------------------------------
 # print the scores in json format
 #
-echo '{"wer": {"mean": '$wMean', "standard_deviation": '$wStdev'}, "utmos": {"mean": '$uMean', "standard_deviation": '$uStdev'}}'
-
+exitFlag=0
+state=OK
+printf '{"state": "%s", "scores": {"wer": {"mean": "%s", "standard_deviation": "%s"}, "utmos": {"mean": "%s", "standard_deviation": "%s"}}}\n' $state $wMean $wStdev $uMean $uStdev
 
 # -----------
 # clean files
