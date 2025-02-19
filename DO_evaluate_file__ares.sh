@@ -1,6 +1,6 @@
 #! /bin/bash
 
-#SBATCH -A plgmeetween2004-cpu
+#SBATCH -A plgmeetween2025-cpu
 #SBATCH -p plgrid
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
@@ -167,6 +167,11 @@ check_organization() {
       exit 1
       ;;
   esac
+}
+
+# get the scores from a json string (e.g. '{"scores": {"wer": 1.2345}}')     
+get_scores_from_json() {
+  python3 -c "import sys, json; obj=json.load(sys.stdin) ; print(json.dumps(obj['scores']))"
 }
 
 
@@ -346,41 +351,31 @@ tmpFinal=${tmpPrefix}.final
 # run WER if needed
 if test $doWER -eq 1
 then
-  bash ${scriptDir}/run-wer__ares.sh $globalFlag $sl $hypFile $refFile > ${tmpSWER}
-  # manage failure
-  test $? -eq 0 || echo '{"wer": "ERROR"}' > ${tmpSWER}
+  bash ${scriptDir}/run-wer__ares.sh $globalFlag $sl $hypFile $refFile | get_scores_from_json > ${tmpSWER}
 fi
 
 # run SACREBLEU if needed
 if test $doSB -eq 1
 then
-  bash ${scriptDir}/run-sacrebleu__ares.sh $realignFlag $sl $tl $hypFile $refFile > ${tmpSSB}
-  # manage failure
-  test $? -eq 0 || echo '{"bleu": "ERROR", "chrf": "ERROR", "ter": "ERROR"}' > ${tmpSSB}
+  bash ${scriptDir}/run-sacrebleu__ares.sh $realignFlag $sl $tl $hypFile $refFile | get_scores_from_json > ${tmpSSB}
 fi
 
 # run SQA if needed
 if test $doSQA -eq 1
 then
-  bash ${scriptDir}/run-SQA-accuracy__ares.sh $sl $hypFile $refFile > ${tmpSSQA}
-  # manage failure
-  test $? -eq 0 || echo '{"accuracy": "ERROR"}' > ${tmpSSQA}
+  bash ${scriptDir}/run-SQA-accuracy__ares.sh $sl $hypFile $refFile | get_scores_from_json > ${tmpSSQA}
 fi
 
 # run ROU if needed
 if test $doROU -eq 1
 then
-  bash ${scriptDir}/run-SUM-rouge__ares.sh $sl $hypFile $refFile > ${tmpSROU}
-  # manage failure
-  test $? -eq 0 || echo '{"R-1": "ERROR", "R-2": "ERROR", "R-L": "ERROR"}' > ${tmpSROU}
+  bash ${scriptDir}/run-SUM-rouge__ares.sh $sl $hypFile $refFile | get_scores_from_json > ${tmpSROU}
 fi
 
 # run SLU if needed
 if test $doSLU -eq 1
 then
-  bash ${scriptDir}/run-SLU-metrics__ares.sh $sl $hypFile $refFile > ${tmpSROU}
-  # manage failure
-  test $? -eq 0 || echo '{"slot_type_f1": "ERROR", "slot_value_cer": "ERROR", "intent_accuracy": "ERROR"}' > ${tmpSROU}
+  bash ${scriptDir}/run-SLU-metrics__ares.sh $sl $hypFile $refFile | get_scores_from_json > ${tmpSROU}
 fi
 
 
