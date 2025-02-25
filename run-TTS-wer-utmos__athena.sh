@@ -132,7 +132,7 @@ uStdev=$(echo $utmosInfo | awk '{print $2}')
 #
 exitFlag=0
 state=OK
-printf '{"state": "%s", "scores": {"wer": {"mean": "%s", "standard_deviation": "%s"}, "utmos": {"mean": "%s", "standard_deviation": "%s"}}}\n' $state $wMean $wStdev $uMean $uStdev
+printf '{"state": "%s", "scores": {"wer_mean": %s, "wer_standard_deviation": %s, "utmos_mean": %s, "utmos_standard_deviation": %s}}\n' $state $wMean $wStdev $uMean $uStdev
 
 # -----------
 # clean files

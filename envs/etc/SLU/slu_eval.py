@@ -819,9 +819,10 @@ def main():
         eval_metrics="intent_acc",
         labels_ignore="Other",
         pad="Other")
-    ia_adjusted = {"mean": ia_result["intent_acc"], "standard_error": ia_result["intent_acc_stderr"]}
 
-    eval_result["intent_accuracy"] = ia_adjusted
+    eval_result["intent_accuracy_mean"] = ia_result["intent_acc"]
+    eval_result["intent_accuracy_standard_error"] = ia_result["intent_acc_stderr"]
+
 
     print(json.dumps(eval_result))
 
