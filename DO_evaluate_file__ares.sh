@@ -27,7 +27,7 @@ ARGS: [-h] [-v] [-d] task testset organization modelname modelsize modeldescript
       -v        	verbose
       -d        	debug
       task      	ASR|MT|ST|LIPREAD|SQA|SUM|SSUM|TTS|SLU
-      testset   	MUSTC|FLORES|ACL6060|LRS3|MTEDX|DIPCO|SPOKENSQUAD|ICSI|AUTOMIN|SPEECHMASSIVE... (depends on task)
+      testset   	MUSTC|FLORES|ACL6060|LRS2|LRS3|MTEDX|DIPCO|SPOKENSQUAD|ICSI|AUTOMIN|SPEECHMASSIVE... (depends on task)
       organization 	TLT|FBK|KIT|ITU|TAUS|ZOOM|PI|CYF
       modelname		a string without-spaces (e.g. Seamless-m4t-v2-large)
       modelsize 	a string without-spaces (e.g. 2.3B-parameters)
@@ -39,8 +39,8 @@ ARGS: [-h] [-v] [-d] task testset organization modelname modelsize modeldescript
       1) the format of hypFile depends on the task/testset:
            - jsonl with summarization hypotheses   if task is SUM or SSUM
            - json with predictions                 if testset is SQA/SPOKENSQUAD
-      	   - videoId TAB sentence (one for line)   if testset is LRS3
-	     (an example of videoId is the string  "test/0Fi83BHQsMA/00002")
+      	   - videoId TAB sentence (one for line)   if testset is LRS2|LRS33
+	     (examples of videoId are the strings "6330311066473698535_00011.mp4" for LSR2 and "test/0Fi83BHQsMA/00002" for LRS3)
            - pipe '|' sep hypotheses(one for line) if task is SLU
              i.e. SENTENCE_WORDS | SLOT_VALUES | INTENT_VALUE
              e.g. qué tiempo hace esta semana | Other Other Other date date | weather_query
@@ -105,7 +105,7 @@ check_testset() {
       ;;
     LIPREAD)
       case $testset in
-        LRS3)
+        LRS2|LRS3)
           ;;
         *)
           print_error unknown testset $testset for task $task
@@ -263,8 +263,8 @@ case $task in
 	#
         refFile=${refDir}/close-talk.${sl}
       ;;
-      LRS3)
-        # special case of LRS3:
+      LRS2|LRS3)
+        # special case of LRS2|LRS3:
 	#   both hyp and ref are tsv files with lines with format
 	#   $videoid TAB $sentence
 	refFileTsv=${refDir}/*.${sl}.tsv.sorted
