@@ -60,6 +60,7 @@ resExe=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/mwerSegmenter/DO_apply_mwerSe
 
 tmpPrefix=/tmp/rb.$$
 tmpHyp=${tmpPrefix}.hyp
+tmpErr=${tmpPrefix}.ERR
 
 # perform mwersegmentation if resegment == 1
 if test $resegment == 1
@@ -73,18 +74,18 @@ fi
 
 ## echo "doing BLEU/ChrF/TER $sl $tl $hyp $ref" 1>&2
 
-info=$(sacrebleu -m bleu chrf ter --language-pair $sl-$tl  --score-only --width 2 $ref -i=$tmpHyp | tr '\012' ' ' | tr -d '[],')
+info=$(sacrebleu -m bleu chrf ter --language-pair $sl-$tl  --score-only --width 2 $ref -i=$tmpHyp 2>${tmpErr} | tr '\012' ' ' | tr -d '[],')
 # manage errors                                                                 
 exitFlag=0
 if test -z "$info"
 then
   exitFlag=1
   state=ERROR
-  reason=UNKNOWN
+  reason=$(grep 'System and reference streams have different lengths' $tmpErr)
   bleu=UNKNOWN
   chrf=UNKNOWN
   ter=UNKNOWN
-  printf '{"state": "%s", "reason": "%s", "scores": {"bleu": "%s", "chrf": "%s", "ter": "%s"}}\n' $state $reason $bleu $chrf $ter
+  printf '{"state": "%s", "reason": "%s", "scores": {"bleu": "%s", "chrf": "%s", "ter": "%s"}}\n' $state "$reason" $bleu $chrf $ter
 else
   exitFlag=0
   state=OK
