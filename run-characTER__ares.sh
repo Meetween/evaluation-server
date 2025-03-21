@@ -4,7 +4,7 @@
 #SBATCH -p plgrid
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem=50G
+#SBATCH --mem=10G
 #SBATCH --job-name=characTER
 
 # script for the evaluation with CharacTER metric

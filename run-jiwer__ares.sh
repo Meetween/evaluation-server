@@ -89,7 +89,7 @@ then
 else
   exitFlag=0
   state="OK"
-  printf '{"state": "%s", "scores": {"wer": "%s"}}\n' $state $info
+  printf '{"state": "%s", "scores": {"wer": %s}}\n' $state $info
 fi
 
 \rm -f ${tmpPrefix}.*

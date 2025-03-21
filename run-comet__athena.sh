@@ -17,7 +17,7 @@
 
 show_help() {
   cat << EOF
-ARGS: [-h] [-n] srcFile hypFile refFile
+ARGS: [-h] [-n] srcL tgtL srcFile hypFile refFile
   where
       -h	print help
       -n	do NOT perform re-segmentation of hypFile
@@ -47,14 +47,17 @@ shift $((OPTIND-1))
 
 [ "${1:-}" = "--" ] && shift
 
-src=$1
-hyp=$2
-ref=$3
-shift 3
+test "$#" -ge 5 || { show_help ; exit 1 ; }
+scrL=$1
+tgtL=$2
+srcF=$3
+hypF=$4
+refF=$5
+shift 5
 
-test -f "$src" || { echo cannot find srcFile $src ; exit 1 ; }
-test -f "$hyp" || { echo cannot find hypFile $hyp ; exit 1 ; }
-test -f "$ref" || { echo cannot find refFile $ref ; exit 1 ; }
+test -f "$srcF" || { echo cannot find srcFile $srcF ; exit 1 ; }
+test -f "$hypF" || { echo cannot find hypFile $hypF ; exit 1 ; }
+test -f "$refF" || { echo cannot find refFile $refF ; exit 1 ; }
 
 source ${PLG_GROUPS_STORAGE}/plggmeetween/envs/setup/comet.USE
 
@@ -67,14 +70,14 @@ tmpHyp=${tmpPrefix}.hyp
 # perform mwersegmentation if resegment == 1
 if test $resegment == 1
 then
-  $resExe $hyp $ref $tmpHyp
-  ## echo YES resegmentation $(wc -l < $hyp) $(wc -l < $ref) $(wc -l < $tmpHyp)
+  $resExe $hypF $refF $tmpHyp
+  ## echo YES resegmentation $(wc -l < $hypF) $(wc -l < $refF) $(wc -l < $tmpHyp)
 else
-  cat $hyp > $tmpHyp
-  ## echo NO resegmentation $(wc -l < $hyp) $(wc -l < $ref) $(wc -l < $tmpHyp)
+  cat $hypF > $tmpHyp
+  ## echo NO resegmentation $(wc -l < $hypF) $(wc -l < $refF) $(wc -l < $tmpHyp)
 fi
 
-comet-score --quiet --only_system -s $src -t $tmpHyp -r $ref 2>/dev/null > $tmpScores
+comet-score --quiet --only_system -s $srcF -t $tmpHyp -r $refF 2>/dev/null > $tmpScores
 
 if test $? != 0
 then
