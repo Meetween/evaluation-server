@@ -72,8 +72,9 @@ def compute_score(dataset, predictions):
     exact_match = 100.0 * exact_match / total
     f1 = 100.0 * f1 / total
 
+    answered_questions = (total - unanswered)
     return {"exact_match": exact_match, "f1": f1, 
-            "dataset_questions": total, "answered_questions": (total - unanswered)}
+            "dataset_reference": total, "input_questions": answered_questions, "answered_questions": answered_questions}
 
 
 if __name__ == "__main__":

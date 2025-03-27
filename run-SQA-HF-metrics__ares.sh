@@ -75,7 +75,7 @@ then
   state=ERROR
   reason=UNKNOWN
   score=UNKNOWN
-  printf '{"state": "%s", "reason": "%s", "scores": {"exact_match": "%s", "f1": "%s"}}\n' $state $reason $score $score > $tmpFinal
+  printf '{"state": "%s", "reason": "%s", "scores": {"exact_match": "%s", "f1": "%s"}}\n' $state $reason $score > $tmpFinal
 else
   exitFlag=0
   state=OK
