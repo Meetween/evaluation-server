@@ -239,6 +239,12 @@ def main(hypo_path: Path, ref_path: Path, track: str, lang: str) -> Dict[str, fl
     hypo = read_hypo(hypo_path, track, lang)
     ref = read_reference(ref_path, track, lang)
     scores = {}
+    # set defaults (to avoid partial scores that causes SPEECHM failure)
+    scores["ASR-WER"] = -1;
+    scores["ST-COMET"] = -1;
+    scores["SQA-BERTScore"] = -1;
+    scores["SSUM-BERTScore"] = -1;
+
     # sanity checks for the IWSLT25 task
     if track == "short":
         assert len(ref.keys()) == 2

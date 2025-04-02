@@ -67,21 +67,7 @@ export MWERSEGMENTER_ROOT=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/mwerSegmen
 exe=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/IF/evaluation.py
 
 track=short
-if echo $refFile | grep -i long &> /dev/null ; then track=long ; fi
+if cat $refFile | grep -i 'task="SSUM"' &> /dev/null ; then track=long ; fi
 
 python $exe -s $hypFile -r $refFile -t $track -l $tgtLang
-
-
-exit
-
-
-# mockup 
-state="OK"
-werS="22.2"
-cometS="0.666"
-sqaS="0.456"
-ssumS="0.789"
-printf '{"state": "%s", "scores": {"ASR-WER": %s, "ST-COMET": %s, "SQA-BERTScore": %s, "SSUM-BERTScore": %s}}\n' $state $werS $cometS $sqaS $ssumS
-
-
 
