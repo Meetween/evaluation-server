@@ -69,5 +69,6 @@ exe=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/IF/evaluation.py
 track=short
 if cat $refFile | grep -i 'task="SSUM"' &> /dev/null ; then track=long ; fi
 
-python $exe -s $hypFile -r $refFile -t $track -l $tgtLang
+python $exe -s $hypFile -r $refFile -t $track -l $tgtLang 2>/dev/null
+
 

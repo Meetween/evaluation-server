@@ -30,6 +30,9 @@ resegment_hyp_file() {
   lang=$4
 
   resExe=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/mwerSegmenter/DO_apply_mwerSegmenter.sh
+  segChars=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/segment_chars.py
+  unsChars=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/unsegment_chars.py
+
 
   tmpBufHyp=/tmp/rhf.$$.buf.hyp
   tmpBufRef=/tmp/rhf.$$.buf.ref
@@ -52,23 +55,23 @@ resegment_hyp_file() {
       | sed -e "s/&apos;/'/g" -e 's/&#124;/|/g' -e "s/&amp;/&/g" -e 's/&lt;//g' -e 's/&gt;//g' -e 's/&quot;/"/g' -e 's/&#91;/[/g' -e 's/&#93;/]/g' -e "s/>//g" -e "s/<//g" -e 's/#//g' \
       > $tmpBufRef
 
-    $resExe $tmpBufHyp $tmpBufRef $hypOut 
+    $resExe $tmpBufHyp $tmpBufRef $hypOut
   else
     # remove special chars (Jan code) and segment in individual chars
     cat $hypIn \
       | sed -e "s/&apos;/'/g" -e 's/&#124;/|/g' -e "s/&amp;/&/g" -e 's/&lt;//g' -e 's/&gt;//g' -e 's/&quot;/"/g' -e 's/&#91;/[/g' -e 's/&#93;/]/g' -e "s/>//g" -e "s/<//g" -e 's/#//g' \
-      | perl -pe 's/(.)/$1 /g' \
+      | python3 ${segChars} \
       > $tmpBufHyp
 
     cat $refIn \
       | sed -e "s/&apos;/'/g" -e 's/&#124;/|/g' -e "s/&amp;/&/g" -e 's/&lt;//g' -e 's/&gt;//g' -e 's/&quot;/"/g' -e 's/&#91;/[/g' -e 's/&#93;/]/g' -e "s/>//g" -e "s/<//g" -e 's/#//g' \
-      | perl -pe 's/(.)/$1 /g' \
+      | python3 ${segChars} \
       > $tmpBufRef
 
     $resExe $tmpBufHyp $tmpBufRef $hypOut
 
-    # remove ipreviously introduced spaces
-    cat $hypOut | perl -pe 's/ (.)/$1/g' > $tmpBufHyp
+    # remove previously introduced spaces
+    cat $hypOut | python3 ${unsChars} > $tmpBufHyp
     cat $tmpBufHyp > $hypOut
 
   fi
