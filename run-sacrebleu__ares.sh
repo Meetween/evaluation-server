@@ -129,7 +129,14 @@ fi
 
 ## echo "doing BLEU/ChrF/TER $sl $tl $hyp $ref" 1>&2
 
-info=$(sacrebleu -m bleu chrf ter --language-pair $sl-$tl  --score-only --width 2 $ref -i=$tmpHyp 2>${tmpErr} | tr '\012' ' ' | tr -d '[],')
+args="-m bleu chrf ter --language-pair $sl-$tl  --score-only --width 2"
+case $lang in
+  zh|ja|ko)
+    args="$args --ter-normalized --ter-asian-support"
+    ;;
+esac
+
+info=$(sacrebleu $args $ref -i=$tmpHyp 2>${tmpErr} | tr '\012' ' ' | tr -d '[],')
 # manage errors                                                                 
 exitFlag=0
 if test -z "$info"
