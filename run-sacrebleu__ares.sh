@@ -111,20 +111,24 @@ shift 4
 test -f "$hyp" || { echo cannot find hyp $hyp ; exit 1 ; }
 test -f "$ref" || { echo cannot find ref $ref ; exit 1 ; }
 
+# do not resegment if num lines of $hyp equals num lines of $ref
+if test $(wc -l < $hyp) == $(wc -l < $ref) ; then resegment=0 ; fi
+
 source ${PLG_GROUPS_STORAGE}/plggmeetween/envs/setup/sacrebleu.USE
 
 tmpPrefix=/tmp/rb.$$
 tmpHyp=${tmpPrefix}.hyp
 tmpErr=${tmpPrefix}.ERR
 
+
 # perform mwersegmentation if resegment == 1
 if test $resegment == 1
 then
   resegment_hyp_file $hyp $ref $tmpHyp $tl
-  # echo YES resegmentation $(wc -l < $hyp) $(wc -l < $ref) $(wc -l < $tmpHyp)
+  ## echo YES resegmentation $(wc -l < $hyp) $(wc -l < $ref) $(wc -l < $tmpHyp)
 else
   cat $hyp > $tmpHyp
-  # echo NO resegmentation $(wc -l < $hyp) $(wc -l < $ref) $(wc -l < $tmpHyp)
+  ## echo NO resegmentation $(wc -l < $hyp) $(wc -l < $ref) $(wc -l < $tmpHyp)
 fi
 
 ## echo "doing BLEU/ChrF/TER $sl $tl $hyp $ref" 1>&2

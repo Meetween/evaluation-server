@@ -16,22 +16,27 @@ import json
 import os
 import re
 import shutil
-import string
 import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
-from collections import namedtuple
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List
 
 import bert_score
 import jiwer
 from comet import download_model, load_from_checkpoint
+from whisper_normalizer import english, basic
 
 
 CHAR_LEVEL_LANGS = {"zh"}
 
-ReferenceSample = namedtuple('ReferenceSample', ['sample_ids', 'reference'])
+
+@dataclass
+class ReferenceSample:
+    sample_ids: List[str]
+    reference: str
+    metadata: Dict[str, str] = None
 
 
 class MwerSegmenter:
@@ -94,11 +99,17 @@ class MwerSegmenter:
 
 
 def read_hypo(hypo_path: Path, track: str, language: str) -> Dict[str, str]:
+
+    def read_text(xml_sample):
+        if xml_sample.text is None:
+            return ""
+        return xml_sample.text.strip()
+
     xml = ET.parse(hypo_path)
     avail_tasks = []
     for task in xml.getroot().iter("task"):
         if task.attrib['track'] == track and task.attrib['text_lang'] == language:
-            return {sample.attrib['id']: sample.text.strip() for sample in task.iter("sample")}
+            return {sample.attrib['id']: read_text(sample) for sample in task.iter("sample")}
         avail_tasks.append((task.attrib['track'], task.attrib['text_lang']))
     raise Exception(
         f"Task '{track}' for language '{language}' not available in {hypo_path}. "
@@ -115,8 +126,14 @@ def read_reference(
             for sample in task.iter("sample"):
                 if sample.attrib['task'] not in samples_by_subtask:
                     samples_by_subtask[sample.attrib['task']] = {}
+                sample_ids = sample.attrib['id'].split(",")
+                sample_reference = next(sample.iter('reference')).text
+                sample_metadata = {}
+                for metadata in sample.iter('metadata'):
+                    for metadata_field in metadata.iter():
+                        sample_metadata[metadata_field.tag] = metadata_field.text
                 samples_by_subtask[sample.attrib['task']][sample.attrib['iid']] = ReferenceSample(
-                    sample.attrib['id'].split(","), next(sample.iter('reference')).text)
+                    sample_ids, sample_reference, sample_metadata)
             return samples_by_subtask
         avail_tasks.append((task.attrib['track'], task.attrib['text_lang']))
     raise Exception(
@@ -131,22 +148,17 @@ def score_asr(
     """
     Computes WER after removing punctuation and lowercasing. No tokenization is performed.
     """
-    _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
-
-    def preprocess(text: str) -> str:
-        # Remove punctuation
-        text = text.translate(str.maketrans('', '', string.punctuation))
-        # convert newlines to spaces and remove duplicated spaces
-        text = _RE_COMBINE_WHITESPACE.sub(" ", text).strip()
-        # Convert to lowercase
-        return text.lower()
+    if lang == "en":
+        std = english.EnglishTextNormalizer()
+    else:
+        std = basic.BasicTextNormalizer()
 
     refs, hypos = [], []
     for _, ref_sample in ref_dict["ASR"].items():
         hypo_components = []
         for sample_id in ref_sample.sample_ids:
-            hypo_components.append(preprocess(hypo_dict[sample_id]))
-        refs.append(preprocess(ref_sample.reference))
+            hypo_components.append(std(hypo_dict[sample_id]))
+        refs.append(std(ref_sample.reference))
         hypos.append(" ".join(hypo_components))
     return jiwer.wer(refs, hypos)
 
@@ -180,10 +192,6 @@ def bertscore(
         hypos.append(hypo_dict[ref_sample.sample_ids[0]])
         refs.append(ref_sample.reference)
 
-    # since BERTScore supports a dedicated model for scientific text, we use it as it aligns with
-    # out domain data. This should be revisited if used with different type of data
-    if lang == "en":
-        lang = "en-sci"
     P, R, F1 = bert_score.score(hypos, refs, lang=lang, rescale_with_baseline=True)
     return F1.mean().detach().item()
 
@@ -211,7 +219,7 @@ def score_st(
     mwer_segmeter = MwerSegmenter(character_level=(lang in CHAR_LEVEL_LANGS))
     for iid, ref_sample in ref_dict["ST"].items():
         ref_lines = ref_sample.reference.split("\n")
-        src_lines = ref_dict["ASR"][iid].reference.split("\n")
+        src_lines = ref_sample.metadata["transcript"].split("\n")
         assert len(ref_lines) == len(src_lines), \
             f"ST reference (IID: {iid}) has mismatched number of target ({len(ref_lines)}) and " \
             f"source lines ({len(src_lines)})"
