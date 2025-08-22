@@ -115,6 +115,9 @@ test -f "$srcF" || { echo cannot find srcFile $srcF ; exit 1 ; }
 test -f "$hypF" || { echo cannot find hypFile $hypF ; exit 1 ; }
 test -f "$refF" || { echo cannot find refFile $refF ; exit 1 ; }
 
+# do not resegment if num lines of $hypF equals num lines of $refF
+if test $(wc -l < $hypF) == $(wc -l < $refF) ; then resegment=0 ; fi
+
 source ${PLG_GROUPS_STORAGE}/plggmeetween/envs/setup/comet.USE
 
 tmpPrefix=/tmp/rb.$$
