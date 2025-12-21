@@ -124,7 +124,7 @@ exe3=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/UTMOS/compute_utmos_from_dir.sh
 
 if test $verbose -eq 1 ; then echo before $exe3 1>&2 ; fi
 utmosInfo=$($exe3 $wavD)
-if test $verbose -eq 1 ; then echo after $exe3 1>&2 ; fi
+if test $verbose -eq 1 ; then echo "after $exe3 : utmosInfo |$utmosInfo|" 1>&2 ; fi
 uMean=$(echo $utmosInfo | awk '{print $1}')
 uStdev=$(echo $utmosInfo | awk '{print $2}')
 
