@@ -1,0 +1,13 @@
+module load Miniconda3/23.3.1-0 || module load miniconda3/23.5.2-0
+eval "$(conda shell.bash hook)"
+
+conda create -p ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/rouge -c conda-forge pip
+conda activate ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/rouge
+
+pip install py-rouge
+pip install nltk
+
+export NLTK_DATA=${PLG_GROUPS_STORAGE}/plggmeetween/envs/setup/nltk_data
+mkdir -p $NLTK_DATA
+python -m nltk.downloader -d $NLTK_DATA punkt_tab
+

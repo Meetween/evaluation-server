@@ -1,0 +1,5 @@
+
+module load Miniconda3/23.3.1-0 &> /dev/null || module load miniconda3/23.5.2-0 &> /dev/null
+eval "$(conda shell.bash hook)"
+conda activate  ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/comet
+

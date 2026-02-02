@@ -1,0 +1,9 @@
+
+module load Miniconda3/23.3.1-0 &> /dev/null || module load miniconda3/23.5.2-0 &> /dev/null
+eval "$(conda shell.bash hook)"
+conda activate  ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/speechmos
+
+# the path of the stored models is ${XDG_CACHE_HOME}/torch/hub
+export XDG_CACHE_HOME=${PLG_GROUPS_STORAGE}/plggmeetween/envs/setup/CACHE
+
+export NUMBA_CACHE_DIR=/tmp

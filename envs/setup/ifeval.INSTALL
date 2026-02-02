@@ -1,0 +1,27 @@
+
+module load Miniconda3/23.3.1-0 &> /dev/null || module load miniconda3/23.5.2-0 &> /dev/null
+
+# athena
+## module load CMake/3.23.1
+## module load GCC/12.3.0
+
+# ares
+module load gcc/12.3.0
+module load cmake/3.26.3-gcccore-12.3.0
+
+
+eval "$(conda shell.bash hook)"
+
+conda create -p ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/ifeval -c conda-forge pip
+conda activate  ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/ifeval
+
+pip install unbabel-comet==2.2.2
+## pip uninstall pytorch-lightning
+## pip install pytorch-lightning==2.4.0
+## pip uninstall jsonargparse
+## pip install jsonargparse==4.37.0
+
+pip install jiwer==3.0.4
+pip install bert_score==0.3.13 
+
+

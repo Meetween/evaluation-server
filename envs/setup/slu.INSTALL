@@ -1,0 +1,13 @@
+
+module load Miniconda3/23.3.1-0 || module load miniconda3/23.5.2-0 
+eval "$(conda shell.bash hook)"
+module load gcc/13.3.0
+
+conda create -p ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/slu -c conda-forge pip
+conda activate  ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/slu 
+
+pip install editdistance
+pip install scipy
+pip install scikit-learn
+pip install seqeval
+
