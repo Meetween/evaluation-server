@@ -1,6 +1,6 @@
 #! /bin/bash
 
-#SBATCH -A plgmeetween2025-gpu-a100
+#SBATCH -A plgmeetween2026-gpu-a100
 #SBATCH -p plgrid-gpu-a100
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
