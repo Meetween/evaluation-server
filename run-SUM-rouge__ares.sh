@@ -73,21 +73,23 @@ python $exe $debugInfo $hyp $ref 2>/dev/null 1> $tmpScores
 
 if test $? != 0
 then
-  exitFlag=1
   state=ERROR
   reason=UNKNOWN
   score=UNKNOWN
-  printf '{"state": "%s", "reason": "%s", "scores": {"R-1"": "%s", "R-2": "%s", "R-L": "%s"}}\n' $state $reason $score $score $score > $tmpFinal
+  cat << EOF > $tmpFinal
+{"state": "$state", "reason": "$reason", "scores": {"R-1_F1": "$score", "R-1_precision": "$score", "R-1_recall": "$score", "R-2_F1": "$score", "R-2_precision": "$score", "R-2_recall": "$score", "R-L_F1": "$score", "R-L_precision": "$score", "R-L_recall": "$score"}}
+EOF
+  exitFlag=1
 else
-  exitFlag=0
   state=OK
-  printf '{"state": "%s", "scores": ' $state > $tmpFinal
-  printf '%s' "$(<$tmpScores)" >> $tmpFinal
-  echo '}' >> $tmpFinal
+cat << EOF > $tmpFinal
+{"state": "$state", "scores": $(<$tmpScores)}
+EOF
+  exitFlag=0
 fi
 
 cat $tmpFinal
 
-\rm -f $tmpScore $tmpFinal
+\rm -f $tmpScores $tmpFinal
 
 
