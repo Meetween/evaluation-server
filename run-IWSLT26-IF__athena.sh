@@ -93,8 +93,8 @@ test -f "$refFile" || { echo cannot find refFile $refFile ; exit 1 ; }
 # source the proper env
 source ${PLG_GROUPS_STORAGE}/plggmeetween/envs/setup/ifeval26.USE
 
-# set with the path of the dir with the "mwerSegmenter" exe
-export MWERSEGMENTER_ROOT=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/mwerSegmenter/bin
+# set with the path of the dir with the "DO_apply_mwerSegmenter.sh" 
+export MWERSEGMENTER_ROOT=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/mwerSegmenter
 
 # define the exe to be invoked
 exe=mcif_eval
@@ -104,10 +104,27 @@ track=short
 if cat $refFile | grep -i '<task' | grep -i 'track="long"' &>/dev/null  ; then track=long ; fi
 
 tmpOut=${tmpPrefix}.out
-$exe -s $hypFile -r $refFile -t $track -l $tgtLang 1> $tmpOut
+tmpErr=${tmpPrefix}.err
+$exe -s $hypFile -r $refFile -t $track -l $tgtLang 1> $tmpOut 2> $tmpErr
 
-# add the non-computed metrics (with -1 value) -- required by SPEECHM instances
-fill_scores $tmpOut
+# check if the computation has been successfull
+if grep -P '"state":\s+"OK"' < $tmpOut &> /dev/null
+then
+  # add the non-computed metrics (with -1 value) -- required by SPEECHM instances
+  fill_scores $tmpOut
+else
+  state="ERROR"
+  echo tmpErr START 1>&2
+  cat $tmpErr 1>&2
+  echo tmpErr END 1>&2
+  if grep -P '^Exception:' < $tmpErr &> /dev/null
+  then
+    reason=$(grep -P '^Exception:' < $tmpErr | perl -pe 's|^Exception: ||')
+  else
+    reason="INTERNAL_ERROR"
+  fi
+  printf '{"state": "%s", "reason": "%s"}\n' "$state" "$reason"
+fi
 
-\rm -f $tmpOut
+\rm -f $tmpOut $tmpErr
 

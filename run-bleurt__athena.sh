@@ -36,8 +36,10 @@ resegment_hyp_file() {
   unsChars=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/unsegment_chars.py
 
 
-  tmpBufHyp=/tmp/rhf.$$.buf.hyp
-  tmpBufRef=/tmp/rhf.$$.buf.ref
+  tmpDir=$(mktemp -d)
+  tmpBufHyp=${tmpDir}/buf.hyp
+  tmpBufRef=${tmpDir}/buf.ref
+
 
   charLevelFlag=0
   case $lang in
@@ -78,7 +80,7 @@ resegment_hyp_file() {
 
   fi
 
-  \rm -f $tmpBufHyp $tmpBufRef
+  \rm -rf $tmpDir
 }
 
 
