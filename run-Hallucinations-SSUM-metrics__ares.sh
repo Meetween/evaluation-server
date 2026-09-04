@@ -21,8 +21,8 @@ ARGS: [-h] [-v] lang hypFile refFile
       -d        debug
       -b        use base model instead of large model
       lang      two-digit language code
-      hypFile   json file with answer predictions
-      refFile   json file with questtion-answer references
+      hypFile   jsonl file with answer predictions
+      refFile   jsonl file with questtion-answer references
 EOF
 }
 

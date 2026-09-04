@@ -17,33 +17,6 @@ tmpPrefix=/tmp/rI26.$$
 # functions
 # ---------
 
-get_scores_from_json() {
-  python3 -c "import sys, json; obj=json.load(sys.stdin) ; print(json.dumps(obj['scores']))"
-}
-
-
-fill_scores() {
-  finalPartialMetricsJson=$1
-  jjExe=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/jj.py
-  tmpEmptyMetricsJsonF=${tmpPrefix}.empty.json
-  tmpPartialMetricsJsonF=${tmpPrefix}.partial.json
-  #
-  # create the tmp json with the empty metrics
-  cat - << EOF > $tmpEmptyMetricsJsonF
-{"ACHAP-CollarF1": -1, "ACHAP-COMET": -1, "ACHAP-GC-BERTScore": -1, "ACHAP-TM-BERTScore": -1, "ACHAP-TM-MATCHED": -1, "ACHAP-WER": -1, "ASR-WER": -1, "QA-BERTScore": -1, "QE-accuracy": -1, "QE-format-accuracy": -1, "SUM-BERTScore": -1, "TRANS-COMET": -1}  
-EOF
-  #
-  # create the tmp json with the actual partial metrics computed till now and filtered from STDIN
-  get_scores_from_json < $finalPartialMetricsJson > $tmpPartialMetricsJsonF
-  #
-  # join the two json and add the state
-  echo '{"state": "OK", "scores": '$($jjExe $tmpEmptyMetricsJsonF $tmpPartialMetricsJsonF)'}'
-  #
-  # delete the tmp files
-  \rm -f $tmpEmptyMetricsJsonF $tmpPartialMetricsJsonF
-}
-
-
 # -----------
 # manage args
 # -----------
@@ -110,8 +83,7 @@ $exe -s $hypFile -r $refFile -t $track -l $tgtLang 1> $tmpOut 2> $tmpErr
 # check if the computation has been successfull
 if grep -P '"state":\s+"OK"' < $tmpOut &> /dev/null
 then
-  # add the non-computed metrics (with -1 value) -- required by SPEECHM instances
-  fill_scores $tmpOut
+  cat $tmpOut
 else
   state="ERROR"
   echo tmpErr START 1>&2
