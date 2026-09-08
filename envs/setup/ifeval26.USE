@@ -1,0 +1,14 @@
+
+module load Miniconda3/23.3.1-0 &> /dev/null || module load miniconda3/23.5.2-0 &> /dev/null
+eval "$(conda shell.bash hook)"
+conda activate  ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/ifeval26
+
+## addLibs=/net/people/plgrid/plgcattoni/TMP/IF2026/libs_etc:/net/people/plgrid/plgcattoni/TMP/IF2026/libs_ffmpeg/lib
+addLibs=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/IFEVAL26/libs_etc:${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/IFEVAL26/libs_ffmpeg/lib
+if test ${LD_LIBRARY_PATH:-void} == void
+then
+  export LD_LIBRARY_PATH=${addLibs}
+else
+  export LD_LIBRARY_PATH=${addLibs}:${LD_LIBRARY_PATH}
+fi
+

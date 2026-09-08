@@ -1,0 +1,22 @@
+
+module load Miniconda3/23.3.1-0 &> /dev/null || module load miniconda3/23.5.2-0 &> /dev/null
+
+eval "$(conda shell.bash hook)"
+
+conda create -p ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/ifeval26 -c conda-forge pip python=3.11
+conda activate  ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/ifeval26
+
+# -----------------------------------------
+# NB: cu128 means NVIDIA driver "CUDA 12.8"
+#     (the driver version from nvidia-smi)
+# -----------------------------------------
+pip install torch torchvision torchaudio torchcodec --extra-index-url https://download.pytorch.org/whl/cu128
+
+# download the iwsltif26.tar.gz archive
+wget 'https://fbk.sharepoint.com/:u:/s/MTUnit/IQC8jHALXJaGSYFFYn-O7e9gAdzcnjCWG72PPlLVHxCfgiw?e=1e5LTN'
+tar xvfz iwsltif26.tar.gz
+\rm -f iwsltif26.tar.gz
+
+cd ifeval26_sw
+pip install -e .
+
