@@ -57,7 +57,7 @@ test -f "$refTsv" || { echo cannot find refTsv $refTsv ; exit 1 ; }
 source ${PLG_GROUPS_STORAGE}/plggmeetween/envs/setup/evaluate.USE
 
 # the evaluation script
-exe=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/AVSPEAKD/eval_AVSPKD_testset.py
+exe=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/AVSPEAKD/eval_AVSPKD_testset_permutation.py
 
 python $exe $args $hypTsv $refTsv
 
