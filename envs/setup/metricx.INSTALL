@@ -1,0 +1,52 @@
+
+module load Miniconda3/23.3.1-0 &> /dev/null || module load miniconda3/23.5.2-0 &> /dev/null
+
+eval "$(conda shell.bash hook)"
+
+conda create -p ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/metricx -c conda-forge python=3.10 pip
+conda activate  ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/metricx
+
+git clone https://github.com/google-research/metricx.git
+
+# v7
+pip install torch==2.10.0+cu128 torchaudio==2.10.0+cu128 torchvision==0.25.0+cu128 protobuf==4.25.9 fsspec==2023.9.2 datasets==2.20.0 numpy==1.26.4 transformers[torch]==4.30.2 sentencepiece==0.1.99 git+https://github.com/google-research/mt-metrics-eval --extra-index-url https://download.pytorch.org/whl/cu128
+pip install protobuf==3.20.1
+
+
+
+exit
+
+
+# v6
+conda create -p ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/metricx -c conda-forge python=3.10 pip
+pip install torch==2.10.0+cu128 torchaudio==2.10.0+cu128 torchvision==0.25.0+cu128 protobuf==4.25.9 fsspec==2023.9.2 datasets==2.20.0 numpy==1.26.4 transformers[torch]==4.30.2 sentencepiece==0.1.99 git+https://github.com/google-research/mt-metrics-eval --extra-index-url https://download.pytorch.org/whl/cu128
+# OK but need export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+
+# v5
+conda create -p ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/metricx -c conda-forge python=3.10 pip
+pip install -r ./metricx/requirements.txt --extra-index-url https://download.pytorch.org/whl/cu128
+#   => FAILURE at run time
+
+
+# v4
+conda create -p ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/metricx -c conda-forge python=3.10 pip
+pip install -r ./metricx.DICLUB.freeze.out --extra-index-url https://download.pytorch.org/whl/cu128
+#   => FAILURE in pip install
+
+
+# v3
+conda create -p ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/metricx -c conda-forge pip
+#   => python=3.15
+pip install -r metricx/requirements.txt
+#   => FAILURE in pip install
+
+# v2
+conda create -p ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/metricx -c conda-forge python=3.10 pip
+pip install -r metricx/requirements.txt
+#   => FAILURE at run time
+
+# v1
+conda create -p ${PLG_GROUPS_STORAGE}/plggmeetween/envs/conda/metricx -c conda-forge python=3.10 pip
+pip install protobuf==4.25.9 fsspec==2023.9.2 datasets==2.20.0 numpy==1.26.4 transformers[torch]==4.30.2 sentencepiece==0.1.99 git+https://github.com/google-research/mt-metrics-eval
+#   => FAILURE at run time
+

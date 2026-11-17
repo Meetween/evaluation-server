@@ -19,6 +19,7 @@ ARGS: [-h] [-v] language hypFile refFile
   where
       -h	print help
       -v	verbose
+      -a	report all the scores
 EOF
 }
 
@@ -27,16 +28,20 @@ EOF
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 
 # Initialize our own variables:
-debugFlag=''
+args=''
+verbose=0
 
-while getopts "hv" opt; do
+while getopts "ahv" opt; do
   case "$opt" in
     h)
       show_help
       exit 0
       ;;
     v)
-      debugFlag='-d'
+      verbose=1
+      ;;
+    a)
+      args='-a'
       ;;
   esac
 done
@@ -60,6 +65,11 @@ source ${PLG_GROUPS_STORAGE}/plggmeetween/envs/setup/bert.USE
 # the evaluation script
 exe=${PLG_GROUPS_STORAGE}/plggmeetween/envs/etc/bert/bertscore.py
 
-python $exe $debugFlag -l $language $hypFile $refFile 2>/dev/null
-
+if test $verbose == 1
+then
+  args="$args -d"
+  python $exe $args -l $language $hypFile $refFile
+else
+  python $exe $args -l $language $hypFile $refFile 2>/dev/null
+fi
 

@@ -9,6 +9,7 @@ import evaluate
 
 
 debugFlag = False
+allscoresFlag = False
 
 
 def debug(msg):
@@ -28,9 +29,10 @@ def getListFromFile(f):
 
 
 def main():
-    global debugFlag
+    global debugFlag, allscoresFlag
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("-a", "--all", action="store_true")
     parser.add_argument("-d", "--debug", action="store_true")
     parser.add_argument(
         "-l",
@@ -49,6 +51,8 @@ def main():
 
     args = parser.parse_args()
 
+    if args.all:
+        allscoresFlag = True
     if args.debug:
         debugFlag = True
 
@@ -74,6 +78,7 @@ def main():
             predictions=hypList,
             references=refList,
             lang=args.lang,
+            rescale_with_baseline=True,
             batch_size=args.batch_size,
         )
 
@@ -83,12 +88,11 @@ def main():
         recall = fmean(scores["recall"])
         f1 = fmean(scores["f1"])
 
-        scores = {
-            "bertscore": f1,
-            "precision": precision,
-            "recall": recall,
-        }
-
+        scores = {"bertscore": f1}
+        if allscoresFlag:
+            scores["precision"] = precision
+            scores["recall"] = recall  
+            
         debug(f"scores {scores}")
 
         print(json.dumps({
